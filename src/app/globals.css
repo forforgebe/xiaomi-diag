@@ -1,6 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-xiaomi-orange: #FF6900;
+  --color-xiaomi-dark: #1a1a2e;
+  --color-xiaomi-card: #16213e;
+  --color-xiaomi-accent: #0f3460;
+  --color-xiaomi-text: #e8e8e8;
+  --color-xiaomi-muted: #8892b0;
+  --color-xiaomi-green: #00c853;
+  --color-xiaomi-red: #ff1744;
+  --color-xiaomi-yellow: #ffd600;
+}
 
 :root {
   --background: #0a0a1a;
