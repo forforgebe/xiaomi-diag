@@ -114,7 +114,8 @@ export default function DiagnosticsPage() {
             if (key.includes('ro.product.model') && !info.model) info.model = val;
             if (key.includes('ro.product.name') && !info.product) info.product = val;
             if (key.includes('ro.build.fingerprint') && !info.fingerprint) info.fingerprint = val;
-            if (key.includes('ro.build.version.sdk')) info.android = 'Android ' + val;
+            if (key.includes('ro.build.version.release') && !info.android) info.android = 'Android ' + val;
+            if (key.includes('ro.build.version.sdk') && !info.android) info.android = 'API ' + val;
             if (key.includes('ro.build.version.incremental') && !info.build) info.build = val;
             if (key.includes('ro.build.version.hyperos')) info.hyperos = 'HyperOS ' + val;
           }
