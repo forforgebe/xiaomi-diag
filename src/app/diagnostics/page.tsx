@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { analyzeWithMiMo } from '@/lib/mimo';
 import { useLang } from '@/lib/lang';
 
+// webadb is dynamically imported to avoid SSR issues (references window)
+
 type DeviceInfo = {
   connected: boolean;
   serial?: string;
@@ -25,12 +27,34 @@ type DiagResult = {
 
 type ConnectionMode = 'webusb' | 'manual';
 
-type AdbDevice = {
-  shell: (cmd: string) => Promise<any>;
-  serial: string;
-};
+/** Read ALL output from a shell command stream (handles WRTE/OKAY/CLSE framing) */
+async function readShellOutput(stream: any): Promise<string> {
+  const chunks: DataView[] = [];
 
-declare const Adb: any;
+  while (true) {
+    const msg = await stream.receive();
+    if (msg.cmd === 'CLSE') {
+      if (msg.data && msg.data.byteLength > 0) chunks.push(msg.data);
+      break;
+    }
+    if (msg.cmd === 'WRTE' && msg.data) {
+      chunks.push(msg.data);
+      // Tell the device we got this chunk so it sends the next one
+      await stream.send('OKAY');
+    }
+    // Ignore other messages (OKAY during connect, etc.)
+  }
+
+  const total = chunks.reduce((acc, c) => acc + c.byteLength, 0);
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength), offset);
+    offset += chunk.byteLength;
+  }
+
+  return new TextDecoder().decode(combined);
+}
 
 export default function DiagnosticsPage() {
   const { t, lang } = useLang();
@@ -38,7 +62,10 @@ export default function DiagnosticsPage() {
   const [mode, setMode] = useState<ConnectionMode>('webusb');
   const [manualLog, setManualLog] = useState('');
   const [adbSupported, setAdbSupported] = useState(true);
+  const [adbStatus, setAdbStatus] = useState<string>('');
   const outputRef = useRef<HTMLDivElement>(null);
+  // Keep a reference to the ADB device so we can reuse it
+  const adbDeviceRef = useRef<any>(null);
 
   useEffect(() => {
     const supported = 'usb' in navigator;
@@ -50,38 +77,34 @@ export default function DiagnosticsPage() {
     if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
   }, [result.logs, result.analysis]);
 
-  async function readStream(stream: any): Promise<string> {
-    const chunks: string[] = [];
-    try {
-      while (true) {
-        const data = await stream.receive();
-        if (!data || data.byteLength === 0) break;
-        chunks.push(new TextDecoder().decode(data));
-      }
-    } catch (e: any) {
-      if (!e.message?.includes('closed')) chunks.push('[stream ended]');
-    }
-    return chunks.join('');
-  }
-
-  async function shellExec(device: AdbDevice, cmd: string): Promise<string> {
-    const stream = await device.shell(cmd);
-    return await readStream(stream);
-  }
-
   const connectAndDiagnose = async () => {
     setResult(prev => ({ ...prev, status: 'connecting', error: undefined, device: { connected: false } }));
+    setAdbStatus('');
+
     try {
+      // Step 1: Open WebUSB transport (shows browser device picker)
+      setAdbStatus(lang === 'zh' ? '正在打开 USB 连接...' : 'Opening USB connection...');
+      // Dynamically import webadb (avoids SSR window reference errors)
+      const Adb = (await import('webadb')).default;
+      Adb.Opt.key_size = 2048;
+
       const transport = await Adb.open('WebUSB');
       setResult(prev => ({ ...prev, status: 'connected' }));
-      const device: AdbDevice = await transport.connectAdb('host::');
+      setAdbStatus(lang === 'zh' ? 'USB 已连接，正在建立 ADB 连接...' : 'USB connected, establishing ADB connection...');
 
-      const info: DeviceInfo = { connected: true, serial: device.serial || '' };
+      // Step 2: Connect ADB with auth handshake
+      const device = await transport.connectAdb('host::');
+      adbDeviceRef.current = device;
+
+      const serial = device.banner?.split(':')?.[0] || 'unknown';
+      const info: DeviceInfo = { connected: true, serial };
       setResult(prev => ({ ...prev, status: 'collecting', device: info }));
+      setAdbStatus(lang === 'zh' ? '已连接，正在收集设备信息...' : 'Connected, collecting device info...');
 
+      // Step 3: Get device properties
       try {
-        const getPropStream = await device.shell('getprop');
-        const getPropOutput = await readStream(getPropStream);
+        const shellStream = await device.shell('getprop');
+        const getPropOutput = await readShellOutput(shellStream);
         const lines = getPropOutput.split('\n');
         for (const line of lines) {
           const match = line.match(/\[([^\]]+)\]:\s*\[([^\]]*)\]/);
@@ -100,14 +123,22 @@ export default function DiagnosticsPage() {
         info.android = info.android || 'Android ?';
         info.model = info.model || 'Xiaomi Device';
         setResult(prev => ({ ...prev, device: info }));
-      } catch (e) {}
+      } catch (e) {
+        console.warn('getprop failed, using defaults', e);
+      }
 
-      const batchCmds = [
-        shellExec(device, 'logcat -b crash -b main -b system -d -t 500 2>/dev/null || logcat -d -t 500'),
-        shellExec(device, 'dumpsys battery'),
-        shellExec(device, 'dumpsys batterystats 2>/dev/null | head -100'),
-      ];
-      const [logcat, battery, batterystats] = await Promise.all(batchCmds);
+      // Step 4: Collect logs in parallel
+      setAdbStatus(lang === 'zh' ? '正在收集日志...' : 'Collecting logs...');
+
+      // Run shell commands sequentially to avoid stream conflicts
+      const logStream = await device.shell('logcat -b crash -b main -b system -d -t 500 2>/dev/null');
+      const logcat = await readShellOutput(logStream);
+
+      const batStream = await device.shell('dumpsys battery');
+      const battery = await readShellOutput(batStream);
+
+      const batStatStream = await device.shell('dumpsys batterystats 2>/dev/null | head -100');
+      const batterystats = await readShellOutput(batStatStream);
 
       const deviceLabel = lang === 'zh' ? '设备信息' : 'DEVICE INFO';
       const allLogs = `=== ${deviceLabel} ===
@@ -127,21 +158,46 @@ ${battery}
 ${batterystats}`;
 
       setResult(prev => ({ ...prev, logs: allLogs, status: 'analyzing' }));
+      setAdbStatus(lang === 'zh' ? '正在使用 MiMo AI 分析...' : 'Analyzing with MiMo AI...');
 
       const analysis = await analyzeWithMiMo(allLogs,
         `Device: ${info.model}\nROM: ${info.hyperos}\nAndroid: ${info.android}\nBuild: ${info.build}`
       );
 
       setResult(prev => ({ ...prev, analysis, status: 'done' }));
+      setAdbStatus('');
     } catch (err: any) {
       const msg = err.message || String(err);
-      const errHint = lang === 'zh'
-        ? '连接失败。请确保：\n1. USB 调试已开启（设置 → 开发者选项 → USB 调试）\n2. 手机已通过 USB 连接\n3. 使用 Chrome 或 Edge 浏览器'
-        : `Connection failed: ${msg}\n\nMake sure:\n1. USB Debugging is enabled (Settings → Developer Options → USB Debugging)\n2. Phone is connected via USB\n3. You're using Chrome or Edge`;
+      console.error('ADB error:', err);
+
+      // User-friendly error messages
+      let errHint: string;
+      if (msg.includes('No device selected') || msg.includes('requestDevice')) {
+        errHint = lang === 'zh'
+          ? '未选择 USB 设备。请确保：\n1. 手机已通过 USB 连接\n2. USB 调试已开启\n3. 使用 Chrome 或 Edge 浏览器'
+          : 'No USB device selected. Make sure:\n1. Phone is connected via USB\n2. USB Debugging is enabled\n3. You\'re using Chrome or Edge';
+      } else if (msg.includes('open') || msg.includes('claim') || msg.includes('interface')) {
+        errHint = lang === 'zh'
+          ? '无法打开 ADB 接口。请：\n1. 断开并重新连接 USB\n2. 在手机上确认「允许 USB 调试」\n3. 尝试更换 USB 线或端口'
+          : 'Cannot open ADB interface. Please:\n1. Disconnect and reconnect USB\n2. Confirm "Allow USB debugging" on phone\n3. Try a different USB cable or port';
+      } else if (msg.includes('auth') || msg.includes('denied')) {
+        errHint = lang === 'zh'
+          ? 'ADB 授权被拒绝。请在手机上确认 RSA 密钥授权。'
+          : 'ADB authorization denied. Please confirm RSA key fingerprint on your phone.';
+      } else if (msg.includes('Failed to connect') || msg.includes('version')) {
+        errHint = lang === 'zh'
+          ? 'ADB 连接失败。可能是手机不支持或 USB 调试模式异常。'
+          : 'ADB connection failed. Phone may not support it or USB Debugging is misconfigured.';
+      } else {
+        errHint = lang === 'zh'
+          ? `连接失败: ${msg}\n\n请确保：\n1. USB 调试已开启\n2. 手机已通过 USB 连接\n3. 使用 Chrome 或 Edge 浏览器`
+          : `Connection failed: ${msg}\n\nMake sure:\n1. USB Debugging is enabled\n2. Phone is connected via USB\n3. You're using Chrome or Edge`;
+      }
       setResult(prev => ({
         ...prev, status: 'error',
-        error: msg.includes('No device selected') ? (lang === 'zh' ? '未选择设备。' : 'No device selected.') : errHint
+        error: errHint
       }));
+      setAdbStatus('');
     }
   };
 
@@ -159,6 +215,8 @@ ${batterystats}`;
   const resetAll = () => {
     setResult({ status: 'idle', device: { connected: false } });
     setManualLog('');
+    setAdbStatus('');
+    adbDeviceRef.current = null;
   };
 
   const statusMap: Record<string, { color: string; labelKey: string }> = {
@@ -222,6 +280,12 @@ ${batterystats}`;
                 </p>
               </div>
             </div>
+
+            {adbStatus && (
+              <div className="mb-3 text-xs text-xiaomi-muted/70 font-mono">
+                {adbStatus}
+              </div>
+            )}
 
             {result.device.connected && (
               <div className="grid grid-cols-2 gap-2 mb-4 text-xs font-mono bg-black/30 rounded-lg p-3">
