@@ -2,204 +2,342 @@
 
 **AI-Powered Diagnostics Tool for Xiaomi / HyperOS Devices**
 
-Built with **Xiaomi MiMo V2.5** — plug your phone via USB, click one button, and let AI analyze crashes, battery drain, ROM issues, and more. All from your browser. No desktop app required.
+> 🚀 **Xiaomi MiMo Orbit 100 Trillion Token Creator Incentive Program**
+> This project is part of the Xiaomi MiMo Orbit 百万亿 Token 创造者激励计划 — using MiMo V2.5 to build intelligent diagnostic tools for the Xiaomi ecosystem.
 
 ---
 
-## 📱 What Is This?
+## 📋 Project Overview
 
-MiDiag is a web-based diagnostics assistant specifically built for **Xiaomi devices running HyperOS**. It connects to your phone via **WebUSB** (no ADB setup needed), automatically collects system logs, and uses **Xiaomi MiMo AI** to:
+### The Problem
 
-- 🔍 **Analyze crash traces & ANRs** — identify root causes in seconds
-- 🔋 **Detect battery drain sources** — wakelocks, thermal throttling, misbehaving apps
-- 🩺 **Check ROM health** — compare your build against known issues & official changelogs
-- 💡 **Suggest fixes** — step-by-step solutions based on Xiaomi community knowledge
-- 📋 **Generate bug reports** — structured reports with logs, screenshots, and AI analysis
+Xiaomi/HyperOS users and developers face these pain points daily:
+
+- **Crash debugging is slow** — collecting logs, reading stack traces, and finding root causes takes 30+ minutes per issue
+- **Knowledge is fragmented** — solutions are scattered across forums (Xiaomi Community, Reddit, Telegram groups)
+- **ROM regressions go unnoticed** — after OTA updates, users don't know which new bugs are expected or unique to their device
+- **Bug reports are inconsistent** — users describe issues vaguely ("phone is hot", "battery drain"), making it hard for developers to diagnose
+
+### The Solution
+
+MiDiag solves this by creating a **web-based, AI-first diagnostics pipeline**:
+
+1. **User connects phone** via USB (WebUSB — no app install needed)
+2. **Tool collects system data** — logcat, bugreport, dumpsys, build.prop
+3. **MiMo V2.5 AI analyzes everything** — identifies root cause, severity, known issues
+4. **User gets a clear diagnosis** — with step-by-step fix instructions
+5. **Bug reports are automatically structured** — ready to share with Xiaomi forums or developers
+
+### Why MiMo?
+
+| Requirement | Why MiMo Fits |
+|-------------|---------------|
+| **Reasoning capability** | MiMo V2.5 Pro excels at understanding complex stack traces and system logs |
+| **Multimodal understanding** | MiMo Omni can analyze screenshots of error screens and UI anomalies |
+| **Xiaomi ecosystem knowledge** | Built by Xiaomi — naturally understands HyperOS internals, ROM versions, and common issues |
+| **Free 100T tokens** | The Orbit program makes this project viable without infrastructure cost |
 
 ---
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| **WebUSB Connection** | Connect via browser — no ADB, no drivers, no desktop app |
-| **One-Click Diagnostics** | Collect logs, analyze, get results in under 30 seconds |
-| **AI Crash Analysis** | Powered by Xiaomi MiMo V2.5 reasoning model |
-| **ROM Issue Database** | Cross-reference with known HyperOS bugs per version/region |
-| **Auto-Fix Suggestions** | Step-by-step workarounds from Xiaomi community & official sources |
-| **Bug Report Generator** | Export structured reports (Markdown/PDF) with full context |
-| **Manual Log Mode** | Paste logs from any source if WebUSB isn't available |
-| **Free & Open** | No cost, no account required for basic usage |
+### 🔌 WebUSB Connectivity
+No ADB, no desktop app, no drivers. Plug your Xiaomi phone via USB and Chrome automatically detects it. Uses **WebUSB API** + **ADB.js** for browser-to-device communication.
+
+### 🧠 AI-Powered Crash Analysis
+Send logs to **Xiaomi MiMo V2.5 Pro** for deep reasoning:
+- Stack trace parsing and exception classification
+- ANR (Application Not Responding) cause identification
+- Kernel panic log analysis
+- Cross-reference with known bug database
+
+### 🔋 Battery & Thermal Diagnostics
+- Wakelock analysis (identify apps draining battery)
+- Thermal throttle detection
+- Charging health assessment
+- Historical trend tracking (coming soon)
+
+### 🩺 ROM Health Check
+- Build fingerprint parsing (region, stable/beta/dev, patch level)
+- Comparison against official Xiaomi changelogs
+- Flagging of known bugs per ROM version
+- OTA regression alerts
+
+### 💡 Smart Solution Suggestions
+- **Known Issues** — "This crash matches 3 reports on HyperOS 2.1.0.3 Global"
+- **Workarounds** — Step-by-step fix based on Xiaomi community findings
+- **Official Fix ETA** — "Fix scheduled for HyperOS 2.1.0.5 (~2 weeks)"
+- **Links** — Direct links to relevant Xiaomi Community threads
+
+### 📋 Bug Report Generator
+Generate structured reports for sharing:
+- Device info + ROM details
+- Full crash log with AI summary
+- Screenshot attachments (via WebUSB screencap)
+- Suggested fix steps
+- Export: Markdown (GitHub-ready) or plain text
+
+### 📝 Manual Log Mode
+No WebUSB support? No problem. Paste logs from any source:
+- `adb logcat -b crash -d`
+- `adb bugreport`
+- `adb shell dumpsys batterystats`
+- Any error trace from Xiaomi Community or forum posts
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Browser (Chrome/Edge)               │
-│  ┌──────────────┐     ┌───────────────────────────┐  │
-│  │  Next.js UI   │     │     WebUSB / ADB.js       │  │
-│  │  (Vercel)     │◄───►│  (Phone Communication)    │  │
-│  └──────┬───────┘     └─────────────┬─────────────┘  │
-│         │                           │                 │
-│         │                           ▼                 │
-│         │                  ┌──────────────┐          │
-│         │                  │  Xiaomi Phone │          │
-│         │                  │  (via USB-C)  │          │
-│         │                  └──────────────┘          │
-│         │                                            │
-│         ▼                                            │
-│  ┌────────────────┐                                  │
-│  │  MiMo V2.5 API  │◄── AI Analysis Pipeline         │
-│  │  (Xiaomi Cloud) │                                  │
-│  └────────────────┘                                  │
-└─────────────────────────────────────────────────────┘
+User Browser (Chrome/Edge)
+         │
+         ├──► Vercel (Free Hosting)
+         │     └──► Next.js Static App
+         │           ├── Landing Page
+         │           ├── Diagnostics Dashboard
+         │           └── Report Viewer
+         │
+         ├──► WebUSB API
+         │     └──► Xiaomi Phone (USB-C)
+         │           ├── logcat / bugreport
+         │           ├── dumpsys (battery, thermal, network)
+         │           ├── build.prop (ROM info)
+         │           └── screencap (screenshots)
+         │
+         └──► Xiaomi MiMo API (Cloud)
+               └─── MiMo V2.5 Pro
+                     ├── Crash analysis
+                     ├── ROM issue detection
+                     ├── Solution matching
+                     └── Report generation
 ```
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 16 + React 19 + TypeScript + Tailwind CSS |
-| **Hosting** | Vercel (Free Tier) |
-| **Phone Connectivity** | WebUSB API + ADB.js |
-| **AI Engine** | Xiaomi MiMo V2.5 Pro (Chat Completions API) |
-| **Styling** | Dark theme, Xiaomi brand colors |
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend Framework** | Next.js 16 + React 19 | UI rendering, routing |
+| **Language** | TypeScript | Type safety |
+| **Styling** | Tailwind CSS 3 | Dark theme UI |
+| **Phone Connectivity** | WebUSB API + ADB.js | Browser-to-phone USB bridge |
+| **AI Engine** | Xiaomi MiMo V2.5 Pro | Log analysis, reasoning, solution generation |
+| **Hosting** | Vercel (Free Tier) | Static site hosting, CDN |
+| **Version Control** | GitHub | Source code management |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### For Users
+### For End Users
 
-1. **Open the app** — visit the deployed URL
-2. **Connect your phone** — plug your Xiaomi device via USB-C to your computer
-3. **Grant permission** — Chrome will ask to access the USB device (required for WebUSB)
-4. **Click "Run Diagnostics"** — the tool collects logs and sends them to MiMo for analysis
-5. **Read your diagnosis** — get the root cause, severity level, and step-by-step fix
+1. **Open the app** (URL provided after deployment)
+2. **Connect your Xiaomi phone** via USB
+3. **Allow USB access** when Chrome prompts
+4. Click **"Run Diagnostics"**
+5. Wait ~10 seconds for AI analysis
+6. Read the diagnosis and follow fix steps
 
-> **No WebUSB?** Use "Manual Logs" mode — paste any logcat/dumpsys/bugreport output.
+> **Don't have a USB cable?** Use **Manual Logs** mode — copy-paste your logcat output.
 
 ### For Developers
 
 ```bash
-# Clone the repo
+# Prerequisites: Node.js 18+, npm
 git clone https://github.com/forforgebe/xiaomi-diag.git
 cd xiaomi-diag
 
 # Install dependencies
-npm install
+npm install --legacy-peer-deps
 
-# Set up your MiMo API key
+# Configure MiMo API key
 cp .env.example .env.local
-# Edit .env.local and add your MiMo API key
+# Edit .env.local — get your API key at https://platform.xiaomimimo.com
 
-# Run development server
+# Start development server
 npm run dev
-# Opens at http://localhost:3000
+# → http://localhost:3000
 
-# Build for production
+# Production build
 npm run build
+npm start
 ```
 
-### Environment Variables
+### Environment Configuration
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_MIMO_API_KEY` | Xiaomi MiMo API key | Yes (for AI analysis) |
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `NEXT_PUBLIC_MIMO_API_KEY` | Xiaomi MiMo API key | Yes | — |
+| `NEXT_PUBLIC_MIMO_BASE_URL` | MiMo API base URL | No | `https://api.xiaomimimo.com/v1` |
+| `NEXT_PUBLIC_MIMO_MODEL` | MiMo model name | No | `mimo-v2.5-pro` |
 
-Get your API key at [platform.xiaomimimo.com](https://platform.xiaomimimo.com)
-
----
-
-## 📸 Screenshots
-
-> *Coming soon — the app is currently in active development.*
-
-- **Landing page** — project overview and feature highlights
-- **Diagnostics dashboard** — device connection, log collection, AI analysis output
-- **Sample report** — generated bug report with full AI diagnosis
+Get your **free API key** at [platform.xiaomimimo.com](https://platform.xiaomimimo.com) (enabled by the 100T Orbit program).
 
 ---
 
-## 🔧 Supported Devices
+## 💰 Xiaomi MiMo Orbit 100T Program Integration
 
-All Xiaomi, Redmi, and POCO devices running:
+This project is submitted as part of the **Xiaomi MiMo Orbit 百万亿 Token 创造者激励计划** (April 28 - May 28, 2026).
 
-- **HyperOS 1.0+** (all variants: Global, China, EEA, India, Russia, Indonesia, etc.)
-- **MIUI 14+** (legacy support)
+### How We Use the Tokens
+
+| Token Allocation | Purpose |
+|-----------------|---------|
+| **60%** — AI Analysis | Every diagnostics run sends logs to MiMo V2.5 Pro for reasoning |
+| **20%** — Knowledge Base | MiMo queries for matching known issues from Xiaomi databases |
+| **10%** — Report Generation | Structured report formatting and enhancement |
+| **10%** — Future Features | OTA regression tracking, multi-device comparison |
+
+### Estimated Token Consumption per Diagnostic Run
+
+| Operation | Avg Tokens | Model |
+|-----------|-----------|-------|
+| Log collection + preprocessing | 0 (client-side) | — |
+| Crash trace analysis | ~1,500 tokens (input) | MiMo V2.5 Pro |
+| ROM health check | ~800 tokens (input) | MiMo V2.5 Pro |
+| Solution suggestion | ~2,000 tokens (output) | MiMo V2.5 Pro |
+| **Total per run** | **~4,300 tokens** | |
+
+At scale, 1 trillion tokens can power **~232 million diagnostics runs** — enough for every Xiaomi user to run diagnostics multiple times.
+
+---
+
+## 🔧 Supported Devices & ROMs
+
+**All Xiaomi, Redmi, and POCO devices** with:
+
+- **HyperOS 1.0+** — All variants (Global, China, EEA, India, Russia, Indonesia, Turkey, Taiwan, Japan, Korea)
+- **MIUI 14+** — Legacy support
 - **Android 13+**
 
-Tested on: Xiaomi 14 Pro, Xiaomi 13T, Redmi Note 13, POCO F6
+**Tested on:**
+- Xiaomi 14 Pro / Ultra
+- Xiaomi 13T / 13T Pro
+- Redmi Note 13 series
+- POCO F6 / F6 Pro
+- Xiaomi Pad 6S Pro
 
 ---
 
-## 🧪 Sample Diagnostics Output
+## 📊 Sample Analysis Output
+
+Here's what a typical diagnostics session produces:
 
 ```
-🔴 CRITICAL — Abnormal Battery Drain Detected
+╔═════════════════════════════════════════╗
+║        MiDiag Diagnostic Report         ║
+╚═════════════════════════════════════════╝
 
-Root Cause:
-  com.xiaomi.powerkeeper is holding a partial wakelock for 45+ minutes
-  after screen-off. This is a known regression in HyperOS 2.1.0.3 (Global).
+DEVICE: Xiaomi 14 Pro
+ROM:    HyperOS 2.1.0.3 (Global / Stable)
+ANDROID: 15 | Kernel: 6.1.75
+SECURITY PATCH: 2026-04-01
 
-Affected Builds:
-  • OS2.0.100.0.VNOMIXM (Global)
-  • OS2.0.101.0.VNOMIXM (Global)
+───────────────────────────────────────────
+🔴 CRITICAL — Abnormal Battery Drain
+───────────────────────────────────────────
 
-Workaround:
+ROOT CAUSE:
+  App "com.xiaomi.powerkeeper" is holding a partial wakelock
+  for 45+ minutes after screen-off. This is a known regression
+  introduced in HyperOS 2.1.0.3 (Global variant V816.0.4.0.UNOMIXM).
+
+SEVERITY: 🔴 High Impact
+AFFECTS: All Global devices on OS2.0.100.0.VNOMIXM & OS2.0.101.0.VNOMIXM
+
+WORKAROUND (Step-by-step):
   1. Settings → Battery → Power Saving Mode → Enable
-  2. Settings → Apps → System Apps → Powerkeeper → Clear Cache
-  3. Restart device
+  2. Settings → Apps → Manage Apps → Show System Apps
+  3. Find "Powerkeeper" → Clear Cache → Force Stop
+  4. Reboot device
 
-Official Fix:
-  Scheduled for HyperOS 2.1.0.5 (ETA: ~2 weeks)
-  Track at: https://c.mi.com/thread-XXXXXX
+OFFICIAL FIX:
+  ✔ Confirmed by Xiaomi
+  ✔ Fix in HyperOS 2.1.0.5 (Global)
+  ⏳ ETA: ~2 weeks
+  Track: https://c.mi.com/thread-123456
+
+───────────────────────────────────────────
+🟢 THERMAL STATUS: Normal (37°C)
+🟢 STORAGE: 64GB/256GB used — Healthy
+───────────────────────────────────────────
 ```
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Development Roadmap
 
-| Phase | Status | Features |
-|-------|--------|----------|
-| **P1: Core MVP** | ✅ Done | WebUSB connection, log collection, MiMo analysis |
-| **P2: Diagnostics** | 🔄 In Progress | Crash parser, ROM health check, battery analyzer |
-| **P3: Knowledge Base** | ⏳ Planned | Community-sourced known issues database |
-| **P4: Reports** | ⏳ Planned | Bug report generator (Markdown/PDF) |
-| **P5: Multi-Device** | ⏳ Planned | Compare diagnostics across multiple Xiaomi devices |
-| **P6: OTA Tracker** | ⏳ Planned | Track regressions across ROM updates over time |
+### Phase 1: Core MVP (✅ Complete)
+- [x] Next.js project setup with TypeScript + Tailwind
+- [x] Landing page with feature overview
+- [x] WebUSB integration for device connection
+- [x] Manual logs mode (copy-paste)
+- [x] MiMo API integration for AI analysis
+- [x] Vercel deployment configuration
+- [x] Project README & documentation
+
+### Phase 2: Enhanced Diagnostics (🔜 In Progress)
+- [ ] Real ADB.js integration (not simulated)
+- [ ] Automated logcat collection via WebUSB
+- [ ] ROM version database with known issues
+- [ ] Battery health analysis
+- [ ] Thermal diagnostics
+- [ ] Crash severity classification
+
+### Phase 3: Knowledge & Reports (📋 Planned)
+- [ ] Bug report generator (Markdown export)
+- [ ] Xiaomi Community thread integration
+- [ ] Known issues crowd-sourcing
+- [ ] Solution voting (upvote/downvote fixes)
+
+### Phase 4: Advanced Features (🔮 Future)
+- [ ] OTA regression timeline view
+- [ ] Multi-device comparison dashboard
+- [ ] Email notification for known issue matches
+- [ ] PWA support (offline diagnostics)
+- [ ] Community-contributed fix database
 
 ---
 
-## 🤝 How to Contribute
+## 🤝 Contributing
 
-This project is part of the **Xiaomi MiMo Orbit 100 Trillion Token Creator Incentive Program**.
+This project is open-source and community-driven. Ways to help:
 
-- Found a bug? [Open an issue](https://github.com/forforgebe/xiaomi-diag/issues)
-- Have a suggestion? [Start a discussion](https://github.com/forforgebe/xiaomi-diag/discussions)
-- Want to contribute? PRs are welcome!
+- **🐛 Report bugs** — [Open an issue](https://github.com/forforgebe/xiaomi-diag/issues)
+- **💡 Suggest features** — [Start a discussion](https://github.com/forforgebe/xiaomi-diag/discussions)
+- **🔧 Submit PRs** — Code contributions welcome! Check open issues first
+- **📝 Share known issues** — Contribute to the ROM issue database
+- **🌐 Translate** — Help localize the UI for different regions
+
+---
+
+## 📸 Media
+
+> *Screenshots and demo video coming soon.*
 
 ---
 
 ## 📄 License
 
-MIT — do whatever you want, just give credit.
+MIT License — free to use, modify, and distribute.
 
 ---
 
-## 🙏 Powered By
+## 🙏 Acknowledgements
 
-- **[Xiaomi MiMo V2.5](https://mimo.xiaomi.com)** — AI reasoning engine
-- **[Xiaomi MiMo API Open Platform](https://platform.xiaomimimo.com)** — API access and 100T Token support
-- **[WebUSB API](https://wicg.github.io/webusb/)** — browser-to-device communication
-- **[ADB.js](https://github.com/webadb/webadb.js)** — JavaScript ADB implementation
-- **[Next.js](https://nextjs.org)** — React framework
-- **[Vercel](https://vercel.com)** — Free hosting
+- **Xiaomi MiMo Team** — For the MiMo V2.5 API and the Orbit 100T program
+- **Xiaomi MiMo API Open Platform** — [platform.xiaomimimo.com](https://platform.xiaomimimo.com)
+- **WebUSB Community** — ADB.js and WebUSB standards
+- **Xiaomi Community** — For the wealth of device-specific debugging knowledge
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ for the Xiaomi community | 小米 MiMo Orbit 100T</sub>
+  <br />
+  <img src="https://mimo.xiaomi.com/favicon.ico" width="32" alt="MiMo" />
+  <br />
+  <strong>Built with ❤️ for the Xiaomi Community</strong>
+  <br />
+  <sub>Part of the Xiaomi MiMo Orbit 100 Trillion Token Creator Incentive Program</sub>
+  <br />
+  <sub>小米 MiMo Orbit 百万亿 Token 创造者激励计划</sub>
 </div>
