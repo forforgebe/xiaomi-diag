@@ -1,7 +1,4 @@
 {
-  "name": "xiaomi-midiag",
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "installCommand": "npm install --legacy-peer-deps"
+  "buildCommand": "npm run build"
 }
